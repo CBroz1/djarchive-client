@@ -503,15 +503,17 @@ class DJArchiveClient(object):
 
                 oerr = 0
 
-                assert not obj.is_dir  # dirs not in recursive=True output
+                if obj.is_dir: # dirs found with recursive=True
+                    continue   # CB 06/24/22 - skipping these items
 
                 spath = obj.object_name  # ds/rev/<...?>/thing
 
                 ssubp = spath.replace(  # <...?>/thing
                     ufs.commonprefix((pfx, spath)), '').lstrip('/')
 
-                if ssubp == self.MANIFEST_FNAME:
+                if self.MANIFEST_FNAME in ssubp:
                     continue  # skip manifest re-download
+                              # CB 06/24/22 even with dir prefix
 
                 # target_directory/<...?>/thing
                 lpath = os.path.join(target_directory, *ssubp.split(ufs.sep))
@@ -528,8 +530,9 @@ class DJArchiveClient(object):
                 #
                 # if the file does not exist, download and checksum.
 
-                if os.path.exists(lpath):
+                ssubp = ssubp.replace(".","") # manifest has no periods, avoid keyerr
 
+                if os.path.exists(lpath):
                     log.debug('{} exists. verifying integrity.'.format(lpath))
                     lsz, lsha = self._manifest(lpath)
 
